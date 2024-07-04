@@ -1,3 +1,5 @@
+import copy
+
 from database.DAO import DAO
 import networkx as nx
 from collections import Counter
@@ -6,6 +8,7 @@ class Model:
         self.colori = DAO.get_color()
         self.grafo = nx.Graph()
         self.diz_nodi = {}
+        self.longest_path = []
 
     def crea_grafo(self, colore, anno):
         self.grafo.clear()
@@ -63,22 +66,27 @@ class Model:
         return self.diz_nodi.keys()
 
     def find_longest_increasing_path(self, start_vertex):
-        def dfs(node, path, weight):
+        self.longest_path.clear()
+
+        def ricorsione(node, path, weight):
             # Initialize the longest path with the current path
-            longest_path = list(path)
+            if (path is not None) and (len(path) > len(self.longest_path)):
+                self.longest_path = copy.deepcopy(path)
+
             # Explore neighbors of the current node
             for neighbor in self.grafo.neighbors(node):
                 edge_weight = self.grafo[node][neighbor]['weight']
                 # Check if the neighbor is not in the current path and if the edge weight is increasing
                 if neighbor not in path and edge_weight >= weight:
+                    print(neighbor)
                     # Recursively search from the neighbor
-                    new_path = dfs(neighbor, path + [neighbor], edge_weight)
-                    # Update the longest path if a longer path is found
-                    if len(new_path) > len(longest_path):
-                        longest_path = new_path
-            return longest_path
+                    new_path = copy.deepcopy(path + [neighbor])
+                    ricorsione(neighbor, new_path, edge_weight)
+                    new_path.pop()
 
         # Start the DFS from the given start vertex
-        longest_path = dfs(self.diz_nodi[start_vertex], [start_vertex], -float('inf'))
-        return len(longest_path)
+        ricorsione(self.diz_nodi[start_vertex], [self.diz_nodi[start_vertex]], -float('inf'))
+        for p in self.longest_path:
+            print(p)
+        return len(self.longest_path)
 
